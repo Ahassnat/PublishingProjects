@@ -94,7 +94,15 @@ namespace DatingApp.API
             //seeder.SeedUsers(); // function used for one time to update data base then we ignore it , if we didnt ignorant the function its will repeate ever time we luncj our project and add the same data again and again in our DB
             app.UseCors(x=>x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
             app.UseAuthentication();
-            app.UseMvc();
+            app.UseDefaultFiles(); // to add the index file in the wwwroot folder to run in port http://localhost:5000/ 
+            app.UseStaticFiles();// to add the static files in wwwroot folder to run in port http://localhost:5000/ 
+            // this UseMvc its for routing the all links in App like member,list,messages,..etc
+            app.UseMvc(routes => {
+                routes.MapSpaFallbackRoute(
+                    name: "spa-fallback",
+                    defaults: new { controller = "Fallback", action = "Index"}
+                );
+            });
         }
     }
 }
