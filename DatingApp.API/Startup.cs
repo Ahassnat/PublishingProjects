@@ -31,10 +31,44 @@ namespace DatingApp.API
         }
 
        
-                public IConfiguration Configuration { get; }
+        public IConfiguration Configuration { get; }
 
+        // in Production Mode
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddDbContext<DataContext>(x=>x.UseMySql(Configuration.GetConnectionString("DefaultConnection")));
+     
+     
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
+            .AddJsonOptions(opt=> {
+                opt.SerializerSettings.ReferenceLoopHandling= 
+                Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+            });// this service for ignoring the postman test proplem
+            services.AddCors();// عشان يسمح بتداول الدومين تاع ال (أي بي أي ) مع الانجلوار
+            services.Configure<CloudinarySettings>(Configuration.GetSection("CloudinarySettings"));
+            services.AddAutoMapper();
+            services.AddTransient<Seed>();
+            services.AddScoped<LogUserActivity>();
+            services.AddScoped<IAuthRepository,AuthRepository>();//للتعامل مع المستودع 
+            services.AddScoped<IDatingRepository,DatingRepository>();
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                  .AddJwtBearer(options=>{
+                      options.TokenValidationParameters = new TokenValidationParameters
+                      {
+                          ValidateIssuerSigningKey =true,
+                          IssuerSigningKey=new SymmetricSecurityKey(Encoding.ASCII.GetBytes(Configuration.GetSection("AppSettings:Token").Value)),
+                          ValidateIssuer=false,
+                          ValidateAudience=false
+                      };
+                  }); 
+            
+        }
+
+
+        // in Development Mode 
+           // This method gets called by the runtime. Use this method to add services to the container.
+        public void ConfigureDevelopmentServices(IServiceCollection services)
         {
             services.AddDbContext<DataContext>(x=>x.UseSqlite(Configuration.GetConnectionString("DefaultConnection")));
      
@@ -63,6 +97,7 @@ namespace DatingApp.API
                   }); 
             
         }
+
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, Seed seeder)
